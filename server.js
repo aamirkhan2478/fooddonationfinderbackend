@@ -1,6 +1,8 @@
 import express from "express";
 import cors from "cors";
 import connection from "./src/database/connection.js";
+import userRouter from "./src/routes/user.routes.js";
+import { errorHandler, notFound } from "./src/middleware/error.middleware.js";
 
 // Initialize express
 const app = express();
@@ -20,9 +22,10 @@ app.get("/", (_req, res) => {
 });
 
 // Routes
-// app.use("/api/user", userRouter);
-// app.use(notFound);
-// app.use(errorHandler);
+app.use("/api/user", userRouter);
+
+app.use(notFound);
+app.use(errorHandler);
 
 // Server
 const port = process.env.PORT || 3000;
