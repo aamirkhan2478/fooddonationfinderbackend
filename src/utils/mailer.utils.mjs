@@ -1,11 +1,11 @@
 import nodemailer from "nodemailer";
 import User from "../models/user.model.mjs";
-import bcrypt from "bcryptjs";
+import crypto from "crypto";
 
 export const sendEmail = async ({ email, emailType, userId }) => {
   try {
     // Generate token
-    const hashToken = await bcrypt.hash(userId.toString(), 12);
+    const hashToken = crypto.randomBytes(20).toString("hex");
 
     // Set token expiry
     const expiry = new Date(Date.now() + 3600000);
