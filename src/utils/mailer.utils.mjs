@@ -1,5 +1,5 @@
 import nodemailer from "nodemailer";
-import User from "../models/user.model.js";
+import User from "../models/user.model.mjs";
 import bcrypt from "bcryptjs";
 
 export const sendEmail = async ({ email, emailType, userId }) => {

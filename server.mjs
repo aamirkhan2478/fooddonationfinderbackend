@@ -1,8 +1,8 @@
 import express from "express";
 import cors from "cors";
-import connection from "./src/database/connection.js";
-import userRouter from "./src/routes/user.routes.js";
-import { errorHandler, notFound } from "./src/middleware/error.middleware.js";
+import connection from "./src/database/connection.mjs";
+import userRouter from "./src/routes/user.routes.mjs";
+import { errorHandler, notFound } from "./src/middleware/error.middleware.mjs";
 
 // Initialize express
 const app = express();

@@ -1,5 +1,5 @@
-import User from "../models/user.model.js";
-import { sendEmail } from "../utils/mailer.utils.js";
+import User from "../models/user.model.mjs";
+import { sendEmail } from "../utils/mailer.utils.mjs";
 
 // @route   POST /api/user/register
 // @desc    Register new user

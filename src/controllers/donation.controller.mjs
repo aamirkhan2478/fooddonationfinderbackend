@@ -1,4 +1,4 @@
-import Donation from "../models/donation.model";
+import Donation from "../models/donation.model.mjs";
 
 export const createDonation = async (req, res) => {
   try {
