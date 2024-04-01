@@ -45,7 +45,10 @@ export const sendEmail = async ({ email, emailType, userId }) => {
     });
 
     let mailOptions = {
-      from: process.env.COMPANY_EMAIL,
+      from: {
+        name: "Food Donation Finder",
+        email: process.env.EMAIL_USER,
+      },
       to: email,
       subject: emailType === "verify" ? "Verify Email" : "Reset Password",
       html:

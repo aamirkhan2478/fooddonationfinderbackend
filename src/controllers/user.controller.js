@@ -6,10 +6,10 @@ import { sendEmail } from "../utils/mailer.utils.js";
 // @access  Public
 export const register = async (req, res) => {
   // Get user details from request body
-  const { userName, email, password, userType } = req.body;
+  const { name, email, password, userType } = req.body;
 
   // Check if all fields are provided
-  if (!userName || !email || !password || !userType) {
+  if (!name || !email || !password || !userType) {
     return res
       .status(400)
       .json({ message: "All fields are required", success: false });
@@ -42,14 +42,14 @@ export const register = async (req, res) => {
 
   try {
     // Check if user already exists
-    const userExists = await User.findOne({ $or: [{ userName }, { email }] });
+    const userExists = await User.findOne({ email });
     if (userExists) {
       return res
         .status(400)
         .json({ message: "User already exists", success: false });
     }
 
-    const user = new User({ userName, email, password, userType });
+    const user = new User({ name, email, password, userType });
     const savedUser = await user.save();
 
     // send verification email
@@ -57,7 +57,7 @@ export const register = async (req, res) => {
 
     // return user without password
     const userWithOutPass = await User.findOne(savedUser._id).select(
-      "-password"
+      "-password -isVerified -verifyToken -verifyTokenExpiry"
     );
 
     // return success response
