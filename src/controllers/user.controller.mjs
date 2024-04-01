@@ -164,10 +164,19 @@ export const login = async (req, res) => {
     // Generate access token
     const token = user.generateAccessToken();
 
+    const userWithOutPass = await User.findOne(user._id).select(
+      "-password -isVerified -verifyToken -verifyTokenExpiry"
+    );
+
     // return success response
     return res
       .status(200)
-      .json({ message: "User loggedIn successfully", token, success: true });
+      .json({
+        message: "User loggedIn successfully",
+        token,
+        success: true,
+        user: userWithOutPass,
+      });
   } catch (error) {
     // return error response
     return res.status(500).json({ message: error.message, success: false });
