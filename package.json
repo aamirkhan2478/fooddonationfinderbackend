@@ -2,11 +2,11 @@
   "name": "food-donation-finder",
   "version": "1.0.0",
   "description": "A food donation finder app",
-  "main": "server.js",
+  "main": "server.mjs",
   "type": "module",
   "scripts": {
-    "start": "node --env-file=.env.local server.js",
-    "dev": "nodemon --env-file=.env.local server.js"
+    "start": "node --env-file=.env.local server.mjs",
+    "dev": "nodemon --env-file=.env.local server.mjs"
   },
   "keywords": [
     "food",
