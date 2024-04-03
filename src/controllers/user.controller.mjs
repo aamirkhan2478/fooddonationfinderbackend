@@ -1,15 +1,15 @@
-import User from "../models/user.model.js";
-import { sendEmail } from "../utils/mailer.utils.js";
+import User from "../models/user.model.mjs";
+import { sendEmail } from "../utils/mailer.utils.mjs";
 
 // @route   POST /api/user/register
 // @desc    Register new user
 // @access  Public
 export const register = async (req, res) => {
   // Get user details from request body
-  const { userName, email, password, userType } = req.body;
+  const { name, email, password, userType } = req.body;
 
   // Check if all fields are provided
-  if (!userName || !email || !password || !userType) {
+  if (!name || !email || !password || !userType) {
     return res
       .status(400)
       .json({ message: "All fields are required", success: false });
@@ -42,14 +42,14 @@ export const register = async (req, res) => {
 
   try {
     // Check if user already exists
-    const userExists = await User.findOne({ $or: [{ userName }, { email }] });
+    const userExists = await User.findOne({ email });
     if (userExists) {
       return res
         .status(400)
         .json({ message: "User already exists", success: false });
     }
 
-    const user = new User({ userName, email, password, userType });
+    const user = new User({ name, email, password, userType });
     const savedUser = await user.save();
 
     // send verification email
@@ -57,7 +57,7 @@ export const register = async (req, res) => {
 
     // return user without password
     const userWithOutPass = await User.findOne(savedUser._id).select(
-      "-password"
+      "-password -isVerified -verifyToken -verifyTokenExpiry"
     );
 
     // return success response
@@ -164,10 +164,19 @@ export const login = async (req, res) => {
     // Generate access token
     const token = user.generateAccessToken();
 
+    const userWithOutPass = await User.findOne(user._id).select(
+      "-password -isVerified -verifyToken -verifyTokenExpiry"
+    );
+
     // return success response
     return res
       .status(200)
-      .json({ message: "User loggedIn successfully", token, success: true });
+      .json({
+        message: "User loggedIn successfully",
+        token,
+        success: true,
+        user: userWithOutPass,
+      });
   } catch (error) {
     // return error response
     return res.status(500).json({ message: error.message, success: false });
