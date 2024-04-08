@@ -2,18 +2,25 @@ import { Schema, model } from "mongoose";
 
 const donationSchema = new Schema(
   {
-    user: {
+    donar: {
       type: Schema.Types.ObjectId,
       ref: "User",
       required: true,
     },
+    recipient: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
+    items: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: "Item",
+        required: true,
+      },
+    ],
     donationType: {
       type: String,
-      required: true,
-      enum: ["Cash", "In-kind"],
-    },
-    amount: {
-      type: Number,
       required: true,
     },
     donationStatus: {
