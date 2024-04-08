@@ -1,0 +1,128 @@
+import Item from "../models/item.model.mjs";
+
+// @route   POST /api/item/add
+// @desc    Create a new item
+// @access  Private
+export const createItem = async (req, res) => {
+  const { name, category, quantity, price } = req.body;
+  const errors = [];
+
+  if (!name) {
+    errors.push({ message: "Name is required" });
+  }
+
+  if (!category) {
+    errors.push({ message: "Category is required" });
+  }
+
+  if (!quantity) {
+    errors.push({ message: "Quantity is required" });
+  }
+
+  if (!price) {
+    errors.push({ message: "Price is required" });
+  }
+
+  if (errors.length > 0) {
+    return res.status(400).json({ message: errors[0].message });
+  }
+
+  try {
+    // Create a new item
+    const item = new Item({
+      name,
+      category,
+      quantity,
+      price,
+    });
+
+    // Save the item to the database
+    await item.save();
+
+    // Send the item as a response
+    return res.status(201).json(item);
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+// @route   GET /api/item/all
+// @desc    Show all items
+// @access  Private
+export const getItems = async (req, res) => {
+  try {
+    const items = await Item.find();
+    return res.status(200).json(items);
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+// @route   GET /api/item/:id
+// @desc    Show a single item
+// @access  Private
+export const getItem = async (req, res) => {
+  try {
+    const item = await Item.findById(req.params.id);
+    return res.status(200).json(item);
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+// @route   PUT /api/item/:id
+// @desc    Update a single item
+// @access  Private
+export const updateItem = async (req, res) => {
+  const { name, category, quantity, price } = req.body;
+  const errors = [];
+
+  if (!name) {
+    errors.push({ message: "Name is required" });
+  }
+
+  if (!category) {
+    errors.push({ message: "Category is required" });
+  }
+
+  if (!quantity) {
+    errors.push({ message: "Quantity is required" });
+  }
+
+  if (!price) {
+    errors.push({ message: "Price is required" });
+  }
+
+  if (errors.length > 0) {
+    return res.status(400).json({ message: errors[0].message });
+  }
+
+  try {
+    // Find the item and update it
+    const item = await Item.findByIdAndUpdate(
+      req.params.id,
+      { name, category, quantity, price },
+      { new: true }
+    );
+
+    // Send the updated item as a response
+    return res.status(200).json(item);
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+// @route   DELETE /api/item/:id
+// @desc    Delete a single item
+// @access  Private
+export const deleteItem = async (req, res) => {
+  try {
+    // Find the item and delete it
+    await Item.findByIdAndDelete(req.params.id);
+
+    // Send a success message as a response
+    return res.status(200).json({ message: "Item deleted successfully" });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
