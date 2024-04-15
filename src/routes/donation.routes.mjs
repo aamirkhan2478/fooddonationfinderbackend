@@ -4,7 +4,7 @@ import {
   getDonations,
   deleteDonation,
   getDonation,
-  updateDonation,
+  updateDonationStatus,
 } from "../controllers/donation.controller.mjs";
 import auth from "../middleware/auth.middleware.mjs";
 
@@ -14,4 +14,6 @@ router.post("/add", auth, createDonation);
 router.get("/all", auth, getDonations);
 router.get("/show/:id", auth, getDonation);
 router.delete("/delete/:id", auth, deleteDonation);
-router.put("/update/:id", auth, updateDonation);
+router.patch("/update/:id", auth, updateDonationStatus);
+
+export default router;
