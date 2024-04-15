@@ -1,4 +1,5 @@
 import Donation from "../models/donation.model.mjs";
+import User from "../models/user.model.mjs";
 
 // @route   POST /api/donation/add
 // @desc    Create a new donation
@@ -15,16 +16,24 @@ export const createDonation = async (req, res) => {
     errors.push({ message: "Donation items are required" });
   }
 
-  if(!donationType){
-    errors.push({message: "Donation Type is required"})
+  if (!donationType) {
+    errors.push({ message: "Donation Type is required" });
   }
 
   if (errors.length > 0) {
-    return res.status(400).json({ message: errors[0].message});
+    return res.status(400).json({ success: false, message: errors[0].message });
   }
 
-
   try {
+    // Check if the recipient is verified or not
+    const recipientIsVerified = await User.findOne({ _id: recipient, isVerified: true });
+
+    if (!recipientIsVerified) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Recipient is not verified" });
+    }
+
     // Create a new donation
     const donation = new Donation({
       donar: req.user._id,
@@ -37,9 +46,11 @@ export const createDonation = async (req, res) => {
     await donation.save();
 
     // Send the donation as a response
-    return res.status(201).json(donation);
+    return res
+      .status(201)
+      .json({ success: true, message: "Donation created successfully" });
   } catch (error) {
-    return res.status(500).json({ message: error.message });
+    return res.status(500).json({ success: false, message: error.message });
   }
 };
 
@@ -51,10 +62,7 @@ export const getDonations = async (req, res) => {
     const donations = await Donation.aggregate([
       {
         $match: {
-          $or: [
-            { donor: req.user._id },
-            { recipient: req.user._id },
-          ],
+          $or: [{ donor: req.user._id }, { recipient: req.user._id }],
         },
       },
       {
@@ -88,13 +96,13 @@ export const getDonations = async (req, res) => {
         $unwind: "$recipient",
       },
     ]);
-    res.status(200).json(donations);
+    res.status(200).json({ success: true, donations });
   } catch (error) {
-    res.status(404).json({ message: error.message });
+    res.status(404).json({ success: false, message: error.message });
   }
 };
 
-// @route   GET /api/donation/show/:id
+// @route   GET /api/donation/:id/show
 // @desc    Show a single donation
 // @access  Private
 export const getDonation = async (req, res) => {
@@ -103,10 +111,7 @@ export const getDonation = async (req, res) => {
       {
         $match: {
           _id: req.params.id,
-          $or: [
-            { donor: req.user._id },
-            { recipient: req.user._id },
-          ],
+          $or: [{ donor: req.user._id }, { recipient: req.user._id }],
         },
       },
       {
@@ -140,16 +145,16 @@ export const getDonation = async (req, res) => {
         $unwind: "$recipient",
       },
     ]);
-    res.status(200).json(donation);
+    res.status(200).json({ success: true, donation });
   } catch (error) {
-    res.status(404).json({ message: error.message });
+    res.status(404).json({ success: false, message: error.message });
   }
 };
 
-// @route   PUT /api/donation/update/:id
-// @desc    Update a donation
+// @route   PATCH /api/donation/:id/update
+// @desc    Update a donation status
 // @access  Private
-export const updateDonation = async (req, res) => {
+export const updateDonationStatus = async (req, res) => {
   try {
     const donation = await Donation.findById(req.params.id);
 
@@ -159,13 +164,16 @@ export const updateDonation = async (req, res) => {
 
     donation.donationStatus = req.body.donationStatus;
     await donation.save();
-    res.status(200).json(donation);
+    res.status(200).json({
+      success: true,
+      message: "Donation status is updated successfully",
+    });
   } catch (error) {
-    res.status(404).json({ message: error.message });
+    res.status(404).json({ success: false, message: error.message });
   }
 };
 
-// @route   DELETE /api/donation/delete/:id
+// @route   DELETE /api/donation/:id/delete
 // @desc    Delete a donation
 // @access  Private
 export const deleteDonation = async (req, res) => {
@@ -173,12 +181,16 @@ export const deleteDonation = async (req, res) => {
     const donation = await Donation.findById(req.params.id);
 
     if (donation.donor.toString() !== req.user._id) {
-      return res.status(401).json({ message: "Not authorized" });
+      return res
+        .status(401)
+        .json({ success: false, message: "Not authorized" });
     }
 
     await donation.remove();
-    res.status(200).json({ message: "Donation deleted successfully" });
+    res
+      .status(200)
+      .json({ success: true, message: "Donation deleted successfully" });
   } catch (error) {
-    res.status(404).json({ message: error.message });
+    res.status(404).json({ success: false, message: error.message });
   }
 };
