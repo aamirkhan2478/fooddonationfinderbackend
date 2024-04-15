@@ -24,7 +24,7 @@ export const createItem = async (req, res) => {
   }
 
   if (errors.length > 0) {
-    return res.status(400).json({ message: errors[0].message });
+    return res.status(400).json({ success: false, message: errors[0].message });
   }
 
   try {
@@ -40,37 +40,40 @@ export const createItem = async (req, res) => {
     await item.save();
 
     // Send the item as a response
-    return res.status(201).json(item);
+    return res
+      .status(201)
+      .json({ success: true, message: "Item added successfully" });
   } catch (error) {
-    return res.status(500).json({ message: error.message });
+    console.log(error);
+    return res.status(500).json({ success: false, message: error.message });
   }
 };
 
 // @route   GET /api/item/all
 // @desc    Show all items
 // @access  Private
-export const getItems = async (req, res) => {
+export const getItems = async (_, res) => {
   try {
     const items = await Item.find();
-    return res.status(200).json(items);
+    return res.status(200).json({ success: true, items });
   } catch (error) {
-    return res.status(500).json({ message: error.message });
+    return res.status(500).json({ success: false, message: error.message });
   }
 };
 
-// @route   GET /api/item/:id
+// @route   GET /api/item/:id/show
 // @desc    Show a single item
 // @access  Private
 export const getItem = async (req, res) => {
   try {
     const item = await Item.findById(req.params.id);
-    return res.status(200).json(item);
+    return res.status(200).json({ success: true, item });
   } catch (error) {
-    return res.status(500).json({ message: error.message });
+    return res.status(500).json({ success: false, message: error.message });
   }
 };
 
-// @route   PUT /api/item/:id
+// @route   PUT /api/item/:id/update
 // @desc    Update a single item
 // @access  Private
 export const updateItem = async (req, res) => {
@@ -94,7 +97,7 @@ export const updateItem = async (req, res) => {
   }
 
   if (errors.length > 0) {
-    return res.status(400).json({ message: errors[0].message });
+    return res.status(400).json({ success: false, message: errors[0].message });
   }
 
   try {
@@ -108,11 +111,11 @@ export const updateItem = async (req, res) => {
     // Send the updated item as a response
     return res.status(200).json(item);
   } catch (error) {
-    return res.status(500).json({ message: error.message });
+    return res.status(500).json({ success: false, message: error.message });
   }
 };
 
-// @route   DELETE /api/item/:id
+// @route   DELETE /api/item/:id/delete
 // @desc    Delete a single item
 // @access  Private
 export const deleteItem = async (req, res) => {
@@ -121,8 +124,10 @@ export const deleteItem = async (req, res) => {
     await Item.findByIdAndDelete(req.params.id);
 
     // Send a success message as a response
-    return res.status(200).json({ message: "Item deleted successfully" });
+    return res
+      .status(200)
+      .json({ success: true, message: "Item deleted successfully" });
   } catch (error) {
-    return res.status(500).json({ message: error.message });
+    return res.status(500).json({ success: false, message: error.message });
   }
 };
