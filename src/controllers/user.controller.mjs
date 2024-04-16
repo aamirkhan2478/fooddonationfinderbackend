@@ -301,12 +301,11 @@ export const updateUser = async (req, res) => {
     }
 
     // Get user details from request body
-    const { userName, email, password } = req.body;
+    const { name, email } = req.body;
 
     // Update user details
-    if (userName) user.userName = userName;
+    if (name) user.name = name;
     if (email) user.email = email;
-    if (password) user.password = password;
 
     // Save user
     await user.save();
@@ -320,3 +319,52 @@ export const updateUser = async (req, res) => {
     return res.status(500).json({ message: error.message, success: false });
   }
 };
+
+// @route   PATCH api/user/change-password
+// @desc    Change user password
+// @access  Private
+export const changePassword = async (req, res) => {
+  // Get current password and new password from request body
+  const { currentPassword, newPassword } = req.body;
+
+  // Check if current password and new password are provided
+  if (!currentPassword || !newPassword) {
+    return res
+      .status(400)
+      .json({ message: "All fields are required", success: false });
+  }
+
+  try {
+    // Find user by id
+    const user = await User.findById(req.user._id);
+
+    // Check if user exists
+    if (!user) {
+      return res
+        .status(400)
+        .json({ message: "User not found", success: false });
+    }
+
+    // Check if current password matches
+    const isMatch = await user.matchPassword(currentPassword);
+    if (!isMatch) {
+      return res
+        .status(400)
+        .json({ message: "Invalid current password", success: false });
+    }
+
+    // Update user with new password
+    user.password = newPassword;
+
+    // Save user
+    await user.save();
+
+    // return success response
+    return res
+      .status(200)
+      .json({ message: "Password changed successfully", success: true });
+  } catch (error) {
+    // return error response
+    return res.status(500).json({ message: error.message, success: false });
+  }
+}
