@@ -109,7 +109,7 @@ export const updateItem = async (req, res) => {
     );
 
     // Send the updated item as a response
-    return res.status(200).json({ success: true, message: "Item added successfully" });
+    return res.status(200).json({ success: true, message: "Item updated successfully" });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
   }
