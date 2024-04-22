@@ -320,7 +320,7 @@ export const updateUser = async (req, res) => {
   }
 };
 
-// @route   PATCH api/user/change-password
+// @route   PUT api/user/change-password
 // @desc    Change user password
 // @access  Private
 export const changePassword = async (req, res) => {
