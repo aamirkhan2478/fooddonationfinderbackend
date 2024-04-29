@@ -2,7 +2,7 @@ import { Schema, model } from "mongoose";
 
 const donationSchema = new Schema(
   {
-    donar: {
+    donor: {
       type: Schema.Types.ObjectId,
       ref: "User",
       required: true,
@@ -10,18 +10,34 @@ const donationSchema = new Schema(
     recipient: {
       type: Schema.Types.ObjectId,
       ref: "User",
-      required: true,
+    },
+    quantity: {
+      type: Number,
     },
     items: [
       {
         type: Schema.Types.ObjectId,
         ref: "Item",
-        required: true,
       },
     ],
     donationType: {
       type: String,
       required: true,
+    },
+    amount: {
+      type: String,
+    },
+    cardNumber: {
+      type: String,
+    },
+    cardName: {
+      type: String,
+    },
+    expiry: {
+      type: String,
+    },
+    cvv: {
+      type: String,
     },
     donationStatus: {
       type: String,

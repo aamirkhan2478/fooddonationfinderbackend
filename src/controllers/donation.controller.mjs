@@ -1,23 +1,48 @@
+import mongoose from "mongoose";
 import Donation from "../models/donation.model.mjs";
+import Item from "../models/item.model.mjs";
 import User from "../models/user.model.mjs";
 
 // @route   POST /api/donation/add
 // @desc    Create a new donation
 // @access  Private
 export const createDonation = async (req, res) => {
-  const { recipient, items, donationType } = req.body;
+  const {
+    items,
+    donationType,
+    amount,
+    cardNumber,
+    cardName,
+    expiry,
+    cvv,
+    quantity,
+  } = req.body;
   const errors = [];
-
-  if (!recipient) {
-    errors.push({ message: "Recipient is required" });
-  }
-
-  if (!items || items.length === 0) {
-    errors.push({ message: "Donation items are required" });
-  }
 
   if (!donationType) {
     errors.push({ message: "Donation Type is required" });
+  }
+
+  if (donationType === "Money") {
+    if (!cardNumber) {
+      errors.push({ message: "Card Number is required" });
+    }
+
+    if (!cardName) {
+      errors.push({ message: "Card Name is required" });
+    }
+
+    if (!expiry) {
+      errors.push({ message: "Expiry is required" });
+    }
+
+    if (!cvv) {
+      errors.push({ message: "CVV is required" });
+    }
+  }
+
+  if (donationType === "Food Items" && items.length === 0) {
+    errors.push({ message: "Items are required" });
   }
 
   if (errors.length > 0) {
@@ -25,25 +50,30 @@ export const createDonation = async (req, res) => {
   }
 
   try {
-    // Check if the recipient is verified or not
-    const recipientIsVerified = await User.findOne({ _id: recipient, isVerified: true });
-
-    if (!recipientIsVerified) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Recipient is not verified" });
-    }
-
     // Create a new donation
     const donation = new Donation({
-      donar: req.user._id,
-      recipient,
+      donor: req.user._id,
       donationType,
+      amount,
+      quantity,
       items,
+      cardNumber,
+      cardName,
+      expiry,
+      cvv,
     });
 
     // Save the donation to the database
     await donation.save();
+
+    // Minus the quantity of the items
+    if (donationType === "Food Items") {
+      for (let i = 0; i < items.length; i++) {
+        const item = await Item.findById(items[i]);
+        item.quantity = parseInt(item.quantity, 10) - parseInt(quantity[i], 10);
+        await item.save();
+      }
+    }
 
     // Send the donation as a response
     return res
@@ -59,46 +89,88 @@ export const createDonation = async (req, res) => {
 // @access  Private
 export const getDonations = async (req, res) => {
   try {
-    const donations = await Donation.aggregate([
-      {
-        $match: {
-          $or: [{ donor: req.user._id }, { recipient: req.user._id }],
+    const user = await User.findById(req.user._id);
+    if (user.userType === "Recipient") {
+      const donations = await Donation.aggregate([
+        {
+          $match: {},
         },
-      },
-      {
-        $lookup: {
-          from: "items",
-          localField: "items",
-          foreignField: "_id",
-          as: "items",
+        {
+          $lookup: {
+            from: "items",
+            localField: "items",
+            foreignField: "_id",
+            as: "items",
+          },
         },
-      },
-      {
-        $lookup: {
-          from: "users",
-          localField: "donor",
-          foreignField: "_id",
-          as: "donor",
+        {
+          $lookup: {
+            from: "users",
+            localField: "donor",
+            foreignField: "_id",
+            as: "donor",
+          },
         },
-      },
-      {
-        $lookup: {
-          from: "users",
-          localField: "recipient",
-          foreignField: "_id",
-          as: "recipient",
+        {
+          $unwind: "$donor",
         },
-      },
-      {
-        $unwind: "$donor",
-      },
-      {
-        $unwind: "$recipient",
-      },
-    ]);
-    res.status(200).json({ success: true, donations });
+        {
+          $project: {
+            "donor.password": 0,
+            "donor.email": 0,
+            "donor.phone": 0,
+            "donor.isVerified": 0,
+            "donor.userType": 0,
+            "donor.createdAt": 0,
+            "donor.updatedAt": 0,
+            "donor.__v": 0,
+          },
+        },
+      ]);
+      return res.status(200).json({ success: true, donations });
+    } else {
+      const donations = await Donation.aggregate([
+        {
+          $match: {
+            donor: req.user._id,
+          },
+        },
+        {
+          $lookup: {
+            from: "items",
+            localField: "items",
+            foreignField: "_id",
+            as: "items",
+          },
+        },
+        {
+          $lookup: {
+            from: "users",
+            localField: "donor",
+            foreignField: "_id",
+            as: "donor",
+          },
+        },
+        {
+          $unwind: "$donor",
+        },
+        {
+          $project: {
+            "donor.password": 0,
+            "donor.email": 0,
+            "donor.phone": 0,
+            "donor.isVerified": 0,
+            "donor.userType": 0,
+            "donor.createdAt": 0,
+            "donor.updatedAt": 0,
+            "donor.__v": 0,
+          },
+        },
+      ]);
+      return res.status(200).json({ success: true, donations });
+    }
   } catch (error) {
-    res.status(404).json({ success: false, message: error.message });
+    return res.status(404).json({ success: false, message: error.message });
   }
 };
 
@@ -110,8 +182,7 @@ export const getDonation = async (req, res) => {
     const donation = await Donation.aggregate([
       {
         $match: {
-          _id: req.params.id,
-          $or: [{ donor: req.user._id }, { recipient: req.user._id }],
+          _id: new mongoose.Types.ObjectId(req.params.id),
         },
       },
       {
@@ -131,23 +202,24 @@ export const getDonation = async (req, res) => {
         },
       },
       {
-        $lookup: {
-          from: "users",
-          localField: "recipient",
-          foreignField: "_id",
-          as: "recipient",
-        },
-      },
-      {
         $unwind: "$donor",
       },
       {
-        $unwind: "$recipient",
+        $project: {
+          "donor.password": 0,
+          "donor.email": 0,
+          "donor.phone": 0,
+          "donor.isVerified": 0,
+          "donor.userType": 0,
+          "donor.createdAt": 0,
+          "donor.updatedAt": 0,
+          "donor.__v": 0,
+        },
       },
     ]);
-    res.status(200).json({ success: true, donation });
+    return res.status(200).json({ success: true, donation: donation[0] });
   } catch (error) {
-    res.status(404).json({ success: false, message: error.message });
+    return res.status(404).json({ success: false, message: error.message });
   }
 };
 
@@ -158,18 +230,14 @@ export const updateDonationStatus = async (req, res) => {
   try {
     const donation = await Donation.findById(req.params.id);
 
-    if (donation.donor.toString() !== req.user._id) {
-      return res.status(401).json({ message: "Not authorized" });
-    }
-
     donation.donationStatus = req.body.donationStatus;
     await donation.save();
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       message: "Donation status is updated successfully",
     });
   } catch (error) {
-    res.status(404).json({ success: false, message: error.message });
+    return res.status(404).json({ success: false, message: error.message });
   }
 };
 
@@ -178,19 +246,37 @@ export const updateDonationStatus = async (req, res) => {
 // @access  Private
 export const deleteDonation = async (req, res) => {
   try {
-    const donation = await Donation.findById(req.params.id);
+    await Donation.findByIdAndDelete(req.params.id);
 
-    if (donation.donor.toString() !== req.user._id) {
-      return res
-        .status(401)
-        .json({ success: false, message: "Not authorized" });
+    // Revert the quantity of the items
+    const donation = await Donation.findById(req.params.id);
+    if (donation.donationType === "Food Items") {
+      for (let i = 0; i < donation.items.length; i++) {
+        const item = await Item.findById(donation.items[i]);
+        item.quantity = item.quantity + donation.quantity[i];
+        await item.save();
+      }
     }
 
-    await donation.remove();
-    res
+    return res
       .status(200)
       .json({ success: true, message: "Donation deleted successfully" });
   } catch (error) {
-    res.status(404).json({ success: false, message: error.message });
+    return res.status(404).json({ success: false, message: error.message });
+  }
+};
+
+// @route   GET /api/donation/recipient
+// @desc    Show all the recipient
+// @access  Private
+export const getRecipients = async (_req, res) => {
+  try {
+    const recipients = await User.find({
+      isVerified: true,
+      userType: "Recipient",
+    });
+    return res.status(200).json({ success: true, recipients });
+  } catch (error) {
+    return res.status(404).json({ success: false, message: error.message });
   }
 };

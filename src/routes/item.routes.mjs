@@ -10,10 +10,10 @@ import auth from "../middleware/auth.middleware.mjs";
 
 const router = express.Router();
 
-router.post("/add", auth, createItem);
-router.get("/all", auth, getItems);
-router.get("/:id/show", auth, getItem);
-router.delete("/:id/delete", auth, deleteItem);
-router.put("/:id/update", auth, updateItem);
+router.post("/add",  createItem);
+router.get("/all",  getItems);
+router.get("/:id/show",  getItem);
+router.delete("/:id/delete",  deleteItem);
+router.put("/:id/update",  updateItem);
 
 export default router;

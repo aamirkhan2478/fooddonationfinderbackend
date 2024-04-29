@@ -5,6 +5,7 @@ import userRouter from "./src/routes/user.routes.mjs";
 import donationRouter from "./src/routes/donation.routes.mjs";
 import itemRouter from "./src/routes/item.routes.mjs";
 import { errorHandler, notFound } from "./src/middleware/error.middleware.mjs";
+import auth from "./src/middleware/auth.middleware.mjs";
 
 // Initialize express
 const app = express();
@@ -25,8 +26,8 @@ app.get("/", (_req, res) => {
 
 // Routes
 app.use("/api/user", userRouter);
-app.use("/api/donation", donationRouter);
-app.use("/api/item", itemRouter);
+app.use("/api/donation", auth, donationRouter);
+app.use("/api/item", auth, itemRouter);
 
 app.use(notFound);
 app.use(errorHandler);
