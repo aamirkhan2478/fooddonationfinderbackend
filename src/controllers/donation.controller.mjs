@@ -289,7 +289,7 @@ export const deleteDonation = async (req, res) => {
 // @access Private
 export const claimDonation = async (req, res) => {
   try {
-    const donation = await Donation.findById(req.params.id);
+    const donation = await Donation.findById(req.params.id).populate("items");
     donation.recipient = req.user._id;
     donation.donationStatus = "Claimed";
     await donation.save();
@@ -307,10 +307,14 @@ export const claimDonation = async (req, res) => {
         users: [donation.donor, donation.recipient],
       });
       await newChat.save();
+
+      // Map the items and add comma between them
+      const items = donation.items.map((item) => item.name).join(", ");
+
       // Send message to the donor
       const newMessage = new Message({
         sender: req.user._id,
-        content: `I have claimed ${donation.name}`,
+        content: `I have claimed ${items || donation.amount}}`,
         chat: newChat._id,
       });
       await newMessage.save();
