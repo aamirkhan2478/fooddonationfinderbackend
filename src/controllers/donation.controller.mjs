@@ -2,6 +2,8 @@ import mongoose from "mongoose";
 import Donation from "../models/donation.model.mjs";
 import Item from "../models/item.model.mjs";
 import User from "../models/user.model.mjs";
+import Chat from "../models/chat.model.mjs";
+import Message from "../models/message.model.mjs";
 
 // @route   POST /api/donation/add
 // @desc    Create a new donation
@@ -90,7 +92,7 @@ export const createDonation = async (req, res) => {
 export const getDonations = async (req, res) => {
   try {
     const user = await User.findById(req.user._id);
-    if (user.userType === "Recipient") {
+    if (user.userType === "Recipient" || user.userType === "Admin") {
       const donations = await Donation.aggregate([
         {
           $match: {},
@@ -112,6 +114,14 @@ export const getDonations = async (req, res) => {
           },
         },
         {
+          $lookup: {
+            from: "users",
+            localField: "recipient",
+            foreignField: "_id",
+            as: "recipient",
+          },
+        },
+        {
           $unwind: "$donor",
         },
         {
@@ -124,6 +134,14 @@ export const getDonations = async (req, res) => {
             "donor.createdAt": 0,
             "donor.updatedAt": 0,
             "donor.__v": 0,
+            "recipient.password": 0,
+            "recipient.email": 0,
+            "recipient.phone": 0,
+            "recipient.isVerified": 0,
+            "recipient.userType": 0,
+            "recipient.createdAt": 0,
+            "recipient.updatedAt": 0,
+            "recipient.__v": 0,
           },
         },
       ]);
@@ -266,17 +284,42 @@ export const deleteDonation = async (req, res) => {
   }
 };
 
-// @route   GET /api/donation/recipient
-// @desc    Show all the recipient
-// @access  Private
-export const getRecipients = async (_req, res) => {
+// @route  PATCH /api/donation/:id/claim
+// @desc   Claim a donation
+// @access Private
+export const claimDonation = async (req, res) => {
   try {
-    const recipients = await User.find({
-      isVerified: true,
-      userType: "Recipient",
+    const donation = await Donation.findById(req.params.id);
+    donation.recipient = req.user._id;
+    donation.donationStatus = "Claimed";
+    await donation.save();
+
+    const chat = await Chat.find({
+      $and: [
+        { users: { $elemMatch: { $eq: donation.donor } } },
+        { users: { $elemMatch: { $eq: donation.recipient } } },
+      ],
     });
-    return res.status(200).json({ success: true, recipients });
+
+    if (chat.length === 0) {
+      const newChat = new Chat({
+        chatName: "sender",
+        users: [donation.donor, donation.recipient],
+      });
+      await newChat.save();
+      // Send message to the donor
+      const newMessage = new Message({
+        sender: req.user._id,
+        content: `I have claimed ${donation.name}`,
+        chat: newChat._id,
+      });
+      await newMessage.save();
+    }
+
+    return res
+      .status(200)
+      .json({ success: true, message: "Donation claimed successfully" });
   } catch (error) {
-    return res.status(404).json({ success: false, message: error.message });
+    return res.status(500).json({ success: false, message: error.message });
   }
 };

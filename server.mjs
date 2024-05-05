@@ -1,14 +1,27 @@
 import express from "express";
+import http from "http";
+import { Server } from "socket.io";
 import cors from "cors";
 import connection from "./src/database/connection.mjs";
 import userRouter from "./src/routes/user.routes.mjs";
 import donationRouter from "./src/routes/donation.routes.mjs";
 import itemRouter from "./src/routes/item.routes.mjs";
+import chatRouter from "./src/routes/chat.routes.mjs";
+import messageRouter from "./src/routes/message.routes.mjs";
 import { errorHandler, notFound } from "./src/middleware/error.middleware.mjs";
 import auth from "./src/middleware/auth.middleware.mjs";
 
 // Initialize express
 const app = express();
+
+// Initialize socket.io
+const server = http.createServer(app);
+const io = new Server(server, {
+  cors: {
+    origin: process.env.CLIENT_URL,
+    methods: ["GET", "POST"],
+  },
+});
 
 // Middleware
 app.use(express.json({ limit: "30mb", extended: true }));
@@ -28,12 +41,60 @@ app.get("/", (_req, res) => {
 app.use("/api/user", userRouter);
 app.use("/api/donation", auth, donationRouter);
 app.use("/api/item", auth, itemRouter);
+app.use("/api/chat", auth, chatRouter);
+app.use("/api/message", auth, messageRouter);
 
 app.use(notFound);
 app.use(errorHandler);
 
+// Socket.io
+io.on("connection", (socket) => {
+  console.log("Connected to socket.io");
+
+  /*
+  - This is a socket.io event listener that listens for the "setup" event.
+  - When it hears the "setup" event, it joins the socket to a room with the
+  - name of the user's id.
+  - It then emits the "connected" event to the socket.
+*/
+  socket.on("setup", (userData) => {
+    socket.join(userData._id);
+    socket.emit("connected");
+  });
+
+  /* 
+   - This is a socket.io event listener that listens for a "join chat" event.
+   - When it hears that event, it joins the room that is passed in.
+   - It then logs a message to the console.
+  */
+  socket.on("join chat", (room) => {
+    socket.join(room);
+    console.log("User joined chat:" + room);
+  });
+
+  socket.on("typing", (room) => socket.in(room).emit("typing"));
+  socket.on("stop typing", (room) => socket.in(room).emit("stop typing"));
+
+  socket.on("new message", (newMessageReceived) => {
+    var chat = newMessageReceived.chat;
+
+    if (!chat.users) return console.log("chat.users is not defined");
+
+    chat.users.forEach((user) => {
+      if (user._id == newMessageReceived.sender._id) return;
+
+      socket.in(user._id).emit("message received", newMessageReceived);
+    });
+  });
+
+  socket.off("setup", () => {
+    console.log("USER DISCONNECTED");
+    socket.leave(userData._id);
+  });
+});
+
 // Server
 const port = process.env.PORT || 3000;
-app.listen(port, () => {
-  console.log(`Server is running on port http://localhost:${port}`);
+server.listen(port, () => {
+  console.log(`Server is running on port ${port}`);
 });

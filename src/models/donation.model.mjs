@@ -42,8 +42,11 @@ const donationSchema = new Schema(
     donationStatus: {
       type: String,
       required: true,
-      enum: ["Pending", "Accepted", "Rejected"],
+      enum: ["Pending", "Claimed", "Accepted", "Rejected"],
       default: "Pending",
+    },
+    donationStatusDescription: {
+      type: String,
     },
   },
   { timestamps: true }
