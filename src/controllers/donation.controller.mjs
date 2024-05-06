@@ -327,3 +327,31 @@ export const claimDonation = async (req, res) => {
     return res.status(500).json({ success: false, message: error.message });
   }
 };
+
+// @route  GET /api/donation/count
+// @desc   Count the number of donations
+// @access Private
+export const countDonations = async (req, res) => {
+  try {
+    // Show only donor
+    if (req.user.userType === "Donor") {
+      const count = await Donation.countDocuments({ donor: req.user._id });
+      return res.status(200).json({ success: true, count });
+    }
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// @route  GET /api/donation/count/donors-recipients
+// @desc   Count the number of donors and recipients
+// @access Private
+export const countDonorsRecipients = async (_req, res) => {
+  try {
+    const donors = await User.countDocuments({ userType: "Donor" });
+    const recipients = await User.countDocuments({ userType: "Recipient" });
+    return res.status(200).json({ success: true, donors, recipients });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+}
