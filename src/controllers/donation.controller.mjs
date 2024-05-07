@@ -314,7 +314,7 @@ export const claimDonation = async (req, res) => {
       // Send message to the donor
       const newMessage = new Message({
         sender: req.user._id,
-        content: `I have claimed ${items || donation.amount}}`,
+        content: `I have claimed ${items || donation.amount}`,
         chat: newChat._id,
       });
       await newMessage.save();
@@ -334,10 +334,8 @@ export const claimDonation = async (req, res) => {
 export const countDonations = async (req, res) => {
   try {
     // Show only donor
-    if (req.user.userType === "Donor") {
-      const count = await Donation.countDocuments({ donor: req.user._id });
+      const count = await Donation.countDocuments();
       return res.status(200).json({ success: true, count });
-    }
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
   }
