@@ -17,7 +17,7 @@ export const register = async (req, res) => {
 
   // Check if password is strong
   const passwordRegex =
-    /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[$@$!%*?&_])[A-Za-z\d$@$!%*?&_]{8,}$/;
+    /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[$@$!%*?&#_])[A-Za-z\d$@$!%*?&#_]{8,}$/;
   if (!passwordRegex.test(password)) {
     return res
       .status(400)
