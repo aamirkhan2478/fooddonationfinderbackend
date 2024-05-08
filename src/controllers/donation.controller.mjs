@@ -351,7 +351,7 @@ export const countDonorsRecipients = async (_req, res) => {
       $and: [{ userType: "Donor" }, { isVerified: true }],
     });
     const recipients = await User.countDocuments({
-      $and: [{ userType: "Donor" }, { isVerified: true }],
+      $and: [{ userType: "Recipient" }, { isVerified: true }],
     });
     return res.status(200).json({ success: true, donors, recipients });
   } catch (error) {
