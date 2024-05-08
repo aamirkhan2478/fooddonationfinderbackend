@@ -125,6 +125,9 @@ export const getDonations = async (req, res) => {
           $unwind: "$donor",
         },
         {
+          $unwind: "$recipient",
+        },
+        {
           $project: {
             "donor.password": 0,
             "donor.email": 0,
