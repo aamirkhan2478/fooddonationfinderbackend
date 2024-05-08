@@ -249,6 +249,7 @@ export const updateDonationStatus = async (req, res) => {
     const donation = await Donation.findById(req.params.id);
 
     donation.donationStatus = req.body.donationStatus;
+    donation.donationStatusDescription = req.body.donationStatusDescription;
     await donation.save();
     return res.status(200).json({
       success: true,
@@ -292,6 +293,7 @@ export const claimDonation = async (req, res) => {
     const donation = await Donation.findById(req.params.id).populate("items");
     donation.recipient = req.user._id;
     donation.donationStatus = "Claimed";
+    donation.donationStatusDescription = "Recipient has claimed the donation";
     await donation.save();
 
     const chat = await Chat.find({
@@ -333,9 +335,8 @@ export const claimDonation = async (req, res) => {
 // @access Private
 export const countDonations = async (req, res) => {
   try {
-    // Show only donor
-      const count = await Donation.countDocuments();
-      return res.status(200).json({ success: true, count });
+    const count = await Donation.countDocuments();
+    return res.status(200).json({ success: true, count });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
   }
@@ -346,10 +347,28 @@ export const countDonations = async (req, res) => {
 // @access Private
 export const countDonorsRecipients = async (_req, res) => {
   try {
-    const donors = await User.countDocuments({ userType: "Donor" });
-    const recipients = await User.countDocuments({ userType: "Recipient" });
+    const donors = await User.countDocuments({
+      $and: [{ userType: "Donor" }, { isVerified: true }],
+    });
+    const recipients = await User.countDocuments({
+      $and: [{ userType: "Donor" }, { isVerified: true }],
+    });
     return res.status(200).json({ success: true, donors, recipients });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
   }
-}
+};
+
+// @route GET /api/donation/count/claimed-donations
+// @desc Count the number of claimed donations
+// @access Private
+export const countClaimedDonations = async (_req, res) => {
+  try {
+    const claimedDonations = await Donation.countDocuments({
+      donationStatus: "Claimed",
+    });
+    return res.status(200).json({ success: true, claimedDonations });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
