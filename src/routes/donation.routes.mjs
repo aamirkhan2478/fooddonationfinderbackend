@@ -8,7 +8,8 @@ import {
   claimDonation,
   countDonations,
   countDonorsRecipients,
-  countClaimedDonations
+  countClaimedDonations,
+  status
 } from "../controllers/donation.controller.mjs";
 
 const router = express.Router();
@@ -22,5 +23,6 @@ router.get("/count/claimed-donations", countClaimedDonations);
 router.delete("/:id/delete", deleteDonation);
 router.patch("/:id/update", updateDonationStatus);
 router.patch("/:id/claim", claimDonation);
+router.get("/show-status", status);
 
 export default router;
