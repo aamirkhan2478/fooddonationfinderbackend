@@ -195,6 +195,24 @@ export const getDonations = async (req, res) => {
   }
 };
 
+// @route   GET /api/donation/show-status
+// @desc    Show a recipient status
+// @access  Private
+export const status = async (req, res) => {
+  try {
+    const status = await Donation.find({
+      recipient: req.user._id,
+    })
+      .select("amount items donationStatusDescription donationStatus")
+      .populate("items", "name");
+
+    return res.status(200).json({ status, success: true });
+  } catch (error) {
+    console.error(error.message);
+    return res.status(404).json({ success: false, message: error.message });
+  }
+};
+
 // @route   GET /api/donation/:id/show
 // @desc    Show a single donation
 // @access  Private
@@ -248,11 +266,21 @@ export const getDonation = async (req, res) => {
 // @desc    Update a donation status
 // @access  Private
 export const updateDonationStatus = async (req, res) => {
+  const { donationStatus, donationStatusDescription } = req.body;
+
+  if (!donationStatus || !donationStatusDescription) {
+    return res
+      .status(400)
+      .json({
+        success: false,
+        message: "Donation Status and Description are required",
+      });
+  }
   try {
     const donation = await Donation.findById(req.params.id);
 
-    donation.donationStatus = req.body.donationStatus;
-    donation.donationStatusDescription = req.body.donationStatusDescription;
+    donation.donationStatus = donationStatus;
+    donation.donationStatusDescription = donationStatusDescription;
     await donation.save();
     return res.status(200).json({
       success: true,
@@ -294,9 +322,15 @@ export const deleteDonation = async (req, res) => {
 export const claimDonation = async (req, res) => {
   try {
     const donation = await Donation.findById(req.params.id).populate("items");
+
+    // Map the items and add comma between them
+    const items = donation.items.map((item) => item.name).join(", ");
+
     donation.recipient = req.user._id;
     donation.donationStatus = "Claimed";
-    donation.donationStatusDescription = "Recipient has claimed the donation";
+    donation.donationStatusDescription = `You claimed this donation with ${
+      items || donation.amount
+    }`;
     await donation.save();
 
     const chat = await Chat.find({
