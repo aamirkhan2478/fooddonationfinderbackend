@@ -92,11 +92,11 @@ export const createDonation = async (req, res) => {
 export const getDonations = async (req, res) => {
   try {
     const user = await User.findById(req.user._id);
+
+    // Check if user is recipient or admin
     if (user.userType === "Recipient" || user.userType === "Admin") {
+      // If recipient or admin, retrieve all donations
       const donations = await Donation.aggregate([
-        {
-          $match: {},
-        },
         {
           $lookup: {
             from: "items",
@@ -150,6 +150,7 @@ export const getDonations = async (req, res) => {
       ]);
       return res.status(200).json({ success: true, donations });
     } else {
+      // If donor, retrieve donations specific to the donor
       const donations = await Donation.aggregate([
         {
           $match: {
@@ -194,6 +195,7 @@ export const getDonations = async (req, res) => {
     return res.status(404).json({ success: false, message: error.message });
   }
 };
+
 
 // @route   GET /api/donation/show-status
 // @desc    Show a recipient status
