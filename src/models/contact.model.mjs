@@ -1,31 +1,29 @@
 import { Schema, model } from "mongoose";
 
-const itemSchema = new Schema(
+const contactSchema = new Schema(
   {
     name: {
       type: String,
       required: true,
     },
-    pic: {
+    phone: {
       type: String,
       required: true,
     },
-    category: {
+    email: {
       type: String,
       required: true,
     },
-    quantity: {
-      type: Number,
-      required: true,
-    },
-    price: {
-      type: Number,
+    message: {
+      type: String,
       required: true,
     },
   },
-  { timestamps: true }
+  {
+    timestamps: true,
+  }
 );
 
-const Item = model("Item", itemSchema);
+const Contact = model("Contact", contactSchema);
 
-export default Item;
+export default Contact;

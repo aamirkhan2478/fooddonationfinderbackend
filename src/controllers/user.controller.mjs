@@ -6,7 +6,7 @@ import { sendEmail } from "../utils/mailer.utils.mjs";
 // @access  Public
 export const register = async (req, res) => {
   // Get user details from request body
-  const { name, email, password, userType } = req.body;
+  const { name, pic, email, password, userType } = req.body;
 
   // Check if all fields are provided
   if (!name || !email || !password || !userType) {
@@ -49,7 +49,7 @@ export const register = async (req, res) => {
         .json({ message: "User already exists", success: false });
     }
 
-    const user = new User({ name, email, password, userType });
+    const user = new User({ name, pic, email, password, userType });
     const savedUser = await user.save();
 
     // send verification email
@@ -169,14 +169,12 @@ export const login = async (req, res) => {
     );
 
     // return success response
-    return res
-      .status(200)
-      .json({
-        message: "User loggedIn successfully",
-        token,
-        success: true,
-        user: userWithOutPass,
-      });
+    return res.status(200).json({
+      message: "User loggedIn successfully",
+      token,
+      success: true,
+      user: userWithOutPass,
+    });
   } catch (error) {
     // return error response
     return res.status(500).json({ message: error.message, success: false });
@@ -285,6 +283,40 @@ export const getUser = async (req, res) => {
   }
 };
 
+// @route   PATCH /api/user/update-image
+// @desc    Update loggedIn user image
+// @access  Private
+export const updateImage = async (req, res) => {
+  // Get image from request body
+  const { pic } = req.body;
+
+  try {
+    // Find user by id
+    const user = await User.findById(req.user._id);
+
+    // Check if user exists
+    if (!user) {
+      return res
+        .status(400)
+        .json({ message: "User not found", success: false });
+    }
+
+    // Update user with new image
+    user.pic = pic;
+
+    // Save user
+    await user.save();
+
+    // return success response
+    return res
+      .status(200)
+      .json({ message: "Image updated successfully", success: true });
+  } catch (error) {
+    // return error response
+    return res.status(500).json({ message: error.message, success: false });
+  }
+};
+
 // @route   PUT /api/user
 // @desc    Update loggedIn user
 // @access  Private
@@ -367,4 +399,4 @@ export const changePassword = async (req, res) => {
     // return error response
     return res.status(500).json({ message: error.message, success: false });
   }
-}
+};

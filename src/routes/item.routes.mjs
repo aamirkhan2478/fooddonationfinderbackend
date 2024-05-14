@@ -5,6 +5,7 @@ import {
   deleteItem,
   getItem,
   updateItem,
+  updateItemImage
 } from "../controllers/item.controller.mjs";
 import auth from "../middleware/auth.middleware.mjs";
 
@@ -15,5 +16,6 @@ router.get("/all",  getItems);
 router.get("/:id/show",  getItem);
 router.delete("/:id/delete",  deleteItem);
 router.put("/:id/update",  updateItem);
+router.put("/:id/update-image",  updateItemImage);
 
 export default router;

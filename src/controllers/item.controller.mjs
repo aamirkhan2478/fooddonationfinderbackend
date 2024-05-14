@@ -4,7 +4,7 @@ import Item from "../models/item.model.mjs";
 // @desc    Create a new item
 // @access  Private
 export const createItem = async (req, res) => {
-  const { name, category, quantity, price } = req.body;
+  const { name, pic, category, quantity, price } = req.body;
   const errors = [];
 
   if (!name) {
@@ -23,6 +23,10 @@ export const createItem = async (req, res) => {
     errors.push({ message: "Price is required" });
   }
 
+  if (!pic) {
+    errors.push({ message: "Image is required" });
+  }
+
   if (errors.length > 0) {
     return res.status(400).json({ success: false, message: errors[0].message });
   }
@@ -31,6 +35,7 @@ export const createItem = async (req, res) => {
     // Create a new item
     const item = new Item({
       name,
+      pic,
       category,
       quantity,
       price,
@@ -109,7 +114,30 @@ export const updateItem = async (req, res) => {
     );
 
     // Send the updated item as a response
-    return res.status(200).json({ success: true, message: "Item updated successfully" });
+    return res
+      .status(200)
+      .json({ success: true, message: "Item updated successfully" });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// @route   Patch /api/item/:id/update-image
+// @desc    Update item image
+// @access  Private
+export const updateItemImage = async (req, res) => {
+  try {
+    // Find the item and update its image
+    const item = await Item.findByIdAndUpdate(
+      req.params.id,
+      { pic: req.body.pic },
+      { new: true }
+    );
+
+    // Send the updated item as a response
+    return res
+      .status(200)
+      .json({ success: true, message: "Item image updated successfully" });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
   }
