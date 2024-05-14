@@ -15,7 +15,7 @@ export const sendMessage = async (req, res) => {
   
     try {
       var message = await Message.create(newMessage);
-      message = await message.populate("sender", "name");
+      message = await message.populate("sender", "name pic");
       message = await message.populate("chat");
       message = await User.populate(message, {
         path: "chat.users",
@@ -34,7 +34,7 @@ export const sendMessage = async (req, res) => {
   export const allMessages = async (req, res) => {
     try {
       const messages = await Message.find({ chat: req.params.id })
-        .populate("sender", "name email")
+        .populate("sender", "name email pic")
         .populate("chat");
   
       res.json(messages);
