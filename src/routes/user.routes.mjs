@@ -22,6 +22,6 @@ router.post("/reset-password", resetPassword);
 router.get("/current-user", auth, getUser);
 router.put("/update-user", auth, updateUser);
 router.put("/change-password", auth, changePassword);
-router.put("/update-image", auth, updateImage);
+router.patch("/update-image", auth, updateImage);
 
 export default router;
