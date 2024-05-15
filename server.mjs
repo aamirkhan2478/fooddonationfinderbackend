@@ -45,8 +45,8 @@ app.use("/api/donation", auth, donationRouter);
 app.use("/api/item", auth, itemRouter);
 app.use("/api/chat", auth, chatRouter);
 app.use("/api/message", auth, messageRouter);
-app.use("/api/contact", auth, contactRouter);
-app.use("/api/volunteer", auth, volunteerRouter);
+app.use("/api/contact", contactRouter);
+app.use("/api/volunteer", volunteerRouter);
 
 app.use(notFound);
 app.use(errorHandler);
