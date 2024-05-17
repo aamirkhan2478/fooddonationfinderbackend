@@ -9,16 +9,8 @@ import Message from "../models/message.model.mjs";
 // @desc    Create a new donation
 // @access  Private
 export const createDonation = async (req, res) => {
-  const {
-    items,
-    donationType,
-    amount,
-    cardNumber,
-    cardName,
-    expiry,
-    cvv,
-    quantity,
-  } = req.body;
+  const { items, donationType, amount, cardNumber, cardName, expiry, cvv } =
+    req.body;
   const errors = [];
 
   if (!donationType) {
@@ -57,7 +49,6 @@ export const createDonation = async (req, res) => {
       donor: req.user._id,
       donationType,
       amount,
-      quantity,
       items,
       cardNumber,
       cardName,
@@ -67,15 +58,6 @@ export const createDonation = async (req, res) => {
 
     // Save the donation to the database
     await donation.save();
-
-    // Minus the quantity of the items
-    if (donationType === "Food Items") {
-      for (let i = 0; i < items.length; i++) {
-        const item = await Item.findById(items[i]);
-        item.quantity = parseInt(item.quantity, 10) - parseInt(quantity[i], 10);
-        await item.save();
-      }
-    }
 
     // Send the donation as a response
     return res
@@ -93,61 +75,23 @@ export const getDonations = async (req, res) => {
   try {
     const user = await User.findById(req.user._id);
 
-    // Check if user is recipient or admin
-    if (user.userType === "Recipient" || user.userType === "Admin") {
-      // If recipient or admin, retrieve all donations
-      const donations = await Donation.aggregate([
-        {
-          $lookup: {
-            from: "items",
-            localField: "items",
-            foreignField: "_id",
-            as: "items",
-          },
-        },
-        {
-          $lookup: {
-            from: "users",
-            localField: "donor",
-            foreignField: "_id",
-            as: "donor",
-          },
-        },
-        {
-          $lookup: {
-            from: "users",
-            localField: "recipient",
-            foreignField: "_id",
-            as: "recipient",
-          },
-        },
-        {
-          $unwind: "$donor",
-        },
-        {
-          $unwind: "$recipient",
-        },
-        {
-          $project: {
-            "donor.password": 0,
-            "donor.email": 0,
-            "donor.phone": 0,
-            "donor.isVerified": 0,
-            "donor.userType": 0,
-            "donor.createdAt": 0,
-            "donor.updatedAt": 0,
-            "donor.__v": 0,
-            "recipient.password": 0,
-            "recipient.email": 0,
-            "recipient.phone": 0,
-            "recipient.isVerified": 0,
-            "recipient.userType": 0,
-            "recipient.createdAt": 0,
-            "recipient.updatedAt": 0,
-            "recipient.__v": 0,
-          },
-        },
-      ]);
+    // Check if user is recipient
+    if (user.userType === "Recipient") {
+      //Show donation not equal to claimed
+      const donations = await Donation.find({
+        donationStatus: { $ne: "Claimed" },
+      })
+        .populate("items", "name")
+        .populate("donor", "name")
+        .populate("recipient", "name");
+
+      return res.status(200).json({ success: true, donations });
+    } else if (user.userType === "Admin") {
+      const donations = await Donation.find({})
+        .populate("items", "name")
+        .populate("donor", "name")
+        .populate("recipient", "name");
+
       return res.status(200).json({ success: true, donations });
     } else {
       // If donor, retrieve donations specific to the donor
@@ -195,7 +139,6 @@ export const getDonations = async (req, res) => {
     return res.status(404).json({ success: false, message: error.message });
   }
 };
-
 
 // @route   GET /api/donation/show-status
 // @desc    Show a recipient status
@@ -264,6 +207,65 @@ export const getDonation = async (req, res) => {
   }
 };
 
+// @route   PUT /api/donation/:id/update-donation
+// @desc    Update a donation
+// @access  Private
+export const updateDonation = async (req, res) => {
+  const { items, donationType, amount, cardNumber, cardName, expiry, cvv } =
+    req.body;
+  const errors = [];
+
+  if (!donationType) {
+    errors.push({ message: "Donation Type is required" });
+  }
+
+  if (donationType === "Money") {
+    if (!cardNumber) {
+      errors.push({ message: "Card Number is required" });
+    }
+
+    if (!cardName) {
+      errors.push({ message: "Card Name is required" });
+    }
+
+    if (!expiry) {
+      errors.push({ message: "Expiry is required" });
+    }
+
+    if (!cvv) {
+      errors.push({ message: "CVV is required" });
+    }
+  }
+
+  if (donationType === "Food Items" && items.length === 0) {
+    errors.push({ message: "Items are required" });
+  }
+
+  if (errors.length > 0) {
+    return res.status(400).json({ success: false, message: errors[0].message });
+  }
+
+  try {
+    const donation = await Donation.findById(req.params.id);
+
+    donation.donationType = donationType;
+    donation.amount = amount;
+    donation.items = items;
+    donation.cardNumber = cardNumber;
+    donation.cardName = cardName;
+    donation.expiry = expiry;
+    donation.cvv = cvv;
+
+    await donation.save();
+
+    return res
+      .status(200)
+      .json({ success: true, message: "Donation updated successfully" });
+  } catch (error) {
+    return res.status(404).json({ success: false, message: error.message });
+  }
+};
+
 // @route   PATCH /api/donation/:id/update
 // @desc    Update a donation status
 // @access  Private
@@ -271,12 +273,10 @@ export const updateDonationStatus = async (req, res) => {
   const { donationStatus, donationStatusDescription } = req.body;
 
   if (!donationStatus || !donationStatusDescription) {
-    return res
-      .status(400)
-      .json({
-        success: false,
-        message: "Donation Status and Description are required",
-      });
+    return res.status(400).json({
+      success: false,
+      message: "Donation Status and Description are required",
+    });
   }
   try {
     const donation = await Donation.findById(req.params.id);
