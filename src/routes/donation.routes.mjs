@@ -9,7 +9,8 @@ import {
   countDonations,
   countDonorsRecipients,
   countClaimedDonations,
-  status
+  status,
+  updateDonation
 } from "../controllers/donation.controller.mjs";
 
 const router = express.Router();
@@ -22,6 +23,7 @@ router.get("/count/donors-recipients", countDonorsRecipients);
 router.get("/count/claimed-donations", countClaimedDonations);
 router.delete("/:id/delete", deleteDonation);
 router.patch("/:id/update", updateDonationStatus);
+router.put("/:id/update-donation", updateDonation);
 router.patch("/:id/claim", claimDonation);
 router.get("/show-status", status);
 
