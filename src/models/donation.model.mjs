@@ -11,9 +11,6 @@ const donationSchema = new Schema(
       type: Schema.Types.ObjectId,
       ref: "User",
     },
-    quantity: {
-      type: Number,
-    },
     items: [
       {
         type: Schema.Types.ObjectId,
