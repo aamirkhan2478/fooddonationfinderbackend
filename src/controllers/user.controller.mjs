@@ -6,10 +6,10 @@ import { sendEmail } from "../utils/mailer.utils.mjs";
 // @access  Public
 export const register = async (req, res) => {
   // Get user details from request body
-  const { name, pic, email, password, userType, address } = req.body;
+  const { name, pic, email, password, userType } = req.body;
 
   // Check if all fields are provided
-  if (!name || !email || !password || !userType || !address) {
+  if (!name || !email || !password || !userType) {
     return res
       .status(400)
       .json({ message: "All fields are required", success: false });
@@ -49,7 +49,7 @@ export const register = async (req, res) => {
         .json({ message: "User already exists", success: false });
     }
 
-    const user = new User({ name, pic, email, password, userType, address });
+    const user = new User({ name, pic, email, password, userType });
     const savedUser = await user.save();
 
     // send verification email

@@ -76,9 +76,13 @@ io.on("connection", (socket) => {
     console.log("User joined chat:" + room);
   });
 
+  // This is a socket.io event listener that listens for a "typing" event.
   socket.on("typing", (room) => socket.in(room).emit("typing"));
+
+  // This is a socket.io event listener that listens for a "stop typing" event.
   socket.on("stop typing", (room) => socket.in(room).emit("stop typing"));
 
+  // This is a socket.io event listener that listens for a "new message" event.
   socket.on("new message", (newMessageReceived) => {
     var chat = newMessageReceived.chat;
 

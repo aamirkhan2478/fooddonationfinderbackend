@@ -77,9 +77,12 @@ export const getDonations = async (req, res) => {
 
     // Check if user is recipient
     if (user.userType === "Recipient") {
-      //Show donation not equal to claimed
+      // Show only status is not equal to Claimed, Ready for Delivery and Delivered and isApproved is true
       const donations = await Donation.find({
-        donationStatus: { $ne: "Claimed" },
+        donationStatus: {
+          $nin: ["Claimed", "Ready for Delivery", "Delivered"],
+        },
+        isApproved: true,
       })
         .populate("items", "name")
         .populate("donor", "name")
