@@ -21,7 +21,7 @@ export const register = async (req, res) => {
   if (!passwordRegex.test(password)) {
     return res
       .status(400)
-      .json({ message: "Password is not strong enough", success: false });
+      .json({ message: "Password must be 8 characters long, 1 special character, any number and one capital character", success: false });
   }
 
   // Check if email is valid
@@ -333,7 +333,7 @@ export const updateUser = async (req, res) => {
     }
 
     // Get user details from request body
-    const { name, email, address } = req.body;
+    const { name, email } = req.body;
 
     // Update user details
     if (name) user.name = name;
