@@ -4,7 +4,7 @@ import Item from "../models/item.model.mjs";
 // @desc    Create a new item
 // @access  Private
 export const createItem = async (req, res) => {
-  const { name, pic, category, quantity, price } = req.body;
+  const { name, pic, category, quantity } = req.body;
   const errors = [];
 
   if (!name) {
@@ -19,9 +19,9 @@ export const createItem = async (req, res) => {
     errors.push({ message: "Quantity is required" });
   }
 
-  if (!price) {
-    errors.push({ message: "Price is required" });
-  }
+  // if (!price) {
+  //   errors.push({ message: "Price is required" });
+  // }
 
   if (!pic) {
     errors.push({ message: "Image is required" });
@@ -38,7 +38,6 @@ export const createItem = async (req, res) => {
       pic,
       category,
       quantity,
-      price,
     });
 
     // Save the item to the database

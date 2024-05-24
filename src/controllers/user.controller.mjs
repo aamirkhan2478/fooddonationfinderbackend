@@ -6,7 +6,7 @@ import { sendEmail } from "../utils/mailer.utils.mjs";
 // @access  Public
 export const register = async (req, res) => {
   // Get user details from request body
-  const { name, pic, email, password, userType } = req.body;
+  const { name, email, password, userType } = req.body;
 
   // Check if all fields are provided
   if (!name || !email || !password || !userType) {
@@ -49,7 +49,7 @@ export const register = async (req, res) => {
         .json({ message: "User already exists", success: false });
     }
 
-    const user = new User({ name, pic, email, password, userType });
+    const user = new User({ name, email, password, userType });
     const savedUser = await user.save();
 
     // send verification email
@@ -299,6 +299,13 @@ export const updateImage = async (req, res) => {
       return res
         .status(400)
         .json({ message: "User not found", success: false });
+    }
+
+    
+    if (!pic ) {
+      return res
+        .status(400)
+        .json({ message: "Please select an image!", success: false });
     }
 
     // Update user with new image

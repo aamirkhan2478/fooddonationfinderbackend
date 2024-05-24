@@ -20,7 +20,7 @@ const itemSchema = new Schema(
     },
     price: {
       type: Number,
-      required: true,
+      // required: true,
     },
   },
   { timestamps: true }
