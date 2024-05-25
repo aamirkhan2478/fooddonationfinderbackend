@@ -90,7 +90,7 @@ export const createDonation = async (req, res) => {
         payment,
       });
 
-      // await donation.save();
+      await donation.save();
 
       return res.status(201).json({
         payment_key: convertParseData.auth_token,
