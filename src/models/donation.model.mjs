@@ -21,30 +21,20 @@ const donationSchema = new Schema(
       type: String,
       required: true,
     },
-    amount: {
-      type: String,
-    },
-    cardNumber: {
-      type: String,
-    },
-    cardName: {
-      type: String,
-    },
-    expiry: {
-      type: String,
-    },
-    cvv: {
-      type: String,
+    payment: {
+      orderId: { type: String },
+      amount: { type: String },
+      currency: { type: String },
+      billingData: { type: Object },
+      paymentKey: { type: String },
+      iframeId: { type: String },
+      default: {},
     },
     donationStatus: {
       type: String,
       required: true,
       enum: ["Pending", "Claimed", "Ready for Delivery", "Delivered"],
       default: "Pending",
-    },
-    isApproved: {
-      type: Boolean,
-      default: false,
     },
     donationStatusDescription: {
       type: String,

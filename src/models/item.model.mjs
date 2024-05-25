@@ -18,9 +18,13 @@ const itemSchema = new Schema(
       type: Number,
       required: true,
     },
-    price: {
-      type: Number,
-      // required: true,
+    isApproved: {
+      type: Boolean,
+      default: false,
+    },
+    createdBy: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
     },
   },
   { timestamps: true }

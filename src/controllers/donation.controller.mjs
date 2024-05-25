@@ -4,35 +4,17 @@ import Item from "../models/item.model.mjs";
 import User from "../models/user.model.mjs";
 import Chat from "../models/chat.model.mjs";
 import Message from "../models/message.model.mjs";
+import axios from "axios";
 
 // @route   POST /api/donation/add
 // @desc    Create a new donation
 // @access  Private
 export const createDonation = async (req, res) => {
-  const { items, donationType, amount, cardNumber, cardName, expiry, cvv } =
-    req.body;
+  const { items, donationType, amount, currency, billingData } = req.body;
   const errors = [];
 
   if (!donationType) {
     errors.push({ message: "Donation Type is required" });
-  }
-
-  if (donationType === "Money") {
-    if (!cardNumber) {
-      errors.push({ message: "Card Number is required" });
-    }
-
-    if (!cardName) {
-      errors.push({ message: "Card Name is required" });
-    }
-
-    if (!expiry) {
-      errors.push({ message: "Expiry is required" });
-    }
-
-    if (!cvv) {
-      errors.push({ message: "CVV is required" });
-    }
   }
 
   if (donationType === "Food Items" && items.length === 0) {
@@ -44,26 +26,113 @@ export const createDonation = async (req, res) => {
   }
 
   try {
-    // Create a new donation
-    const donation = new Donation({
-      donor: req.user._id,
-      donationType,
-      amount,
-      items,
-      cardNumber,
-      cardName,
-      expiry,
-      cvv,
-    });
+    if (donationType === "Money") {
+      // Step 1: Authentication
+      const authResponse = await axios.post(
+        "https://pakistan.paymob.com/api/auth/tokens",
+        { api_key: process.env.PAYMOB_API_KEY }
+      );
+      const token = authResponse.data.token;
 
-    // Save the donation to the database
-    await donation.save();
+      // Step 2: Create Order
+      const orderResponse = await axios.post(
+        "https://pakistan.paymob.com/api/ecommerce/orders",
+        {
+          auth_token: token,
+          delivery_needed: false,
+          amount_cents: amount * 100,
+          currency: currency,
+          items: [],
+        }
+      );
+      const orderId = orderResponse.data.id;
 
-    // Send the donation as a response
-    return res
-      .status(201)
-      .json({ success: true, message: "Donation created successfully" });
+      
+      // Step 3: Generate Payment Key
+      const paymentKeyResponse = await axios.post(
+        "https://pakistan.paymob.com/api/acceptance/post_pay",
+        {
+          auth_token: token,
+          amount_cents: amount * 100,
+          expiration: 3600,
+          order_id: orderId,
+          billing_data: billingData,
+          currency: currency,
+          integration_id: process.env.PAYMOB_INTEGRATION_ID,
+        }
+      );
+
+      console.log(paymentKeyResponse);
+
+      const convertParseData = JSON.parse(paymentKeyResponse.config.data);
+      // Store order and payment details in MongoDB
+      const payment = {
+        orderId,
+        amount,
+        currency,
+        billingData,
+        paymentKey: convertParseData.auth_token,
+        iframeId: process.env.PAYMOB_IFRAME_ID,
+      };
+
+      // check if the there is no error in the payment
+      if (paymentKeyResponse.data.error) {
+        return res.status(400).json({
+          success: false,
+          message: paymentKeyResponse.data.error,
+        });
+      }
+
+      // create new donation
+      const donation = new Donation({
+        donor: req.user._id,
+        donationType,
+        payment,
+      });
+
+      // await donation.save();
+
+      return res.status(201).json({
+        payment_key: convertParseData.auth_token,
+        iframe_id: process.env.PAYMOB_IFRAME_ID,
+        success: true,
+        message: "Donation created successfully",
+      });
+    }
+
+    if (donationType === "Food Items") {
+      // Check if the items are available
+      for (let i = 0; i < items.length; i++) {
+        const item = await Item.findById(items[i]);
+        if (item.quantity < 1) {
+          return res.status(400).json({
+            success: false,
+            message: `${item.name} is not available`,
+          });
+        }
+      }
+
+      // Reduce the quantity of the items
+      for (let i = 0; i < items.length; i++) {
+        const item = await Item.findById(items[i]);
+        item.quantity = item.quantity - item.quantity;
+        await item.save();
+      }
+
+      const donation = new Donation({
+        donor: req.user._id,
+        donationType,
+        items,
+      });
+
+      await donation.save();
+
+      return res
+        .status(201)
+        .json({ success: true, message: "Donation created successfully" });
+    }
   } catch (error) {
+    console.log(error);
     return res.status(500).json({ success: false, message: error.message });
   }
 };
@@ -81,8 +150,7 @@ export const getDonations = async (req, res) => {
       const donations = await Donation.find({
         donationStatus: {
           $nin: ["Claimed", "Ready for Delivery", "Delivered"],
-        },
-        isApproved: true,
+        }
       })
         .populate("items", "name")
         .populate("donor", "name")
@@ -412,5 +480,84 @@ export const countClaimedDonations = async (_req, res) => {
     return res.status(200).json({ success: true, claimedDonations });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// @route   PATCH /api/donation/:id/approve
+// @desc    Approve a donation
+// @access  Private
+export const approveDonation = async (req, res) => {
+  try {
+    const donation = await Donation.findById(req.params.id);
+
+    donation.isApproved = true;
+    await donation.save();
+
+    return res
+      .status(200)
+      .json({ success: true, message: "Donation approved successfully" });
+  } catch (error) {
+    return res.status(404).json({ success: false, message: error.message });
+  }
+};
+
+export const createOrder = async (req, res) => {
+  try {
+    const { amount, currency, billingData } = req.body;
+
+    // Step 1: Authentication
+    const authResponse = await axios.post(
+      "https://accept.paymobsolutions.com/api/auth/tokens",
+      {
+        api_key: process.env.PAYMOB_API_KEY,
+      }
+    );
+    const token = authResponse.data.token;
+
+    // Step 2: Create Order
+    const orderResponse = await axios.post(
+      "https://accept.paymobsolutions.com/api/ecommerce/orders",
+      {
+        auth_token: token,
+        delivery_needed: false,
+        amount_cents: amount * 100, // amount in cents
+        currency: currency,
+        items: [],
+      }
+    );
+    const orderId = orderResponse.data.id;
+
+    // Step 3: Generate Payment Key
+    const paymentKeyResponse = await axios.post(
+      "https://accept.paymobsolutions.com/api/acceptance/payment_keys",
+      {
+        auth_token: token,
+        amount_cents: amount * 100,
+        expiration: 3600,
+        order_id: orderId,
+        billing_data: billingData,
+        currency: currency,
+        integration_id: process.env.PAYMOB_INTEGRATION_ID,
+      }
+    );
+
+    // Store order and payment details in MongoDB
+    const payment = new Payment({
+      orderId,
+      amount,
+      currency,
+      billingData,
+      paymentKey: paymentKeyResponse.data.token,
+      iframeId: process.env.PAYMOB_IFRAME_ID,
+    });
+
+    await payment.save();
+
+    res.json({
+      payment_key: paymentKeyResponse.data.token,
+      iframe_id: PAYMOB_IFRAME_ID,
+    });
+  } catch (error) {
+    res.status(500).send(error.message);
   }
 };

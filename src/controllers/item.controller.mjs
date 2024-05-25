@@ -5,6 +5,7 @@ import Item from "../models/item.model.mjs";
 // @access  Private
 export const createItem = async (req, res) => {
   const { name, pic, category, quantity } = req.body;
+  const { id } = req.user;
   const errors = [];
 
   if (!name) {
@@ -18,10 +19,6 @@ export const createItem = async (req, res) => {
   if (!quantity) {
     errors.push({ message: "Quantity is required" });
   }
-
-  // if (!price) {
-  //   errors.push({ message: "Price is required" });
-  // }
 
   if (!pic) {
     errors.push({ message: "Image is required" });
@@ -38,6 +35,7 @@ export const createItem = async (req, res) => {
       pic,
       category,
       quantity,
+      createdBy: id,
     });
 
     // Save the item to the database
@@ -56,9 +54,13 @@ export const createItem = async (req, res) => {
 // @route   GET /api/item/all
 // @desc    Show all items
 // @access  Private
-export const getItems = async (_, res) => {
+export const getItems = async (req, res) => {
+  const { id } = req.user;
   try {
-    const items = await Item.find();
+    const items = await Item.find({
+      quantity: { $gt: 0 },
+      createdBy: { $eq: id },
+    });
     return res.status(200).json({ success: true, items });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
@@ -81,7 +83,7 @@ export const getItem = async (req, res) => {
 // @desc    Update a single item
 // @access  Private
 export const updateItem = async (req, res) => {
-  const { name, category, quantity, price } = req.body;
+  const { name, category, quantity } = req.body;
   const errors = [];
 
   if (!name) {
@@ -96,19 +98,15 @@ export const updateItem = async (req, res) => {
     errors.push({ message: "Quantity is required" });
   }
 
-  if (!price) {
-    errors.push({ message: "Price is required" });
-  }
-
   if (errors.length > 0) {
     return res.status(400).json({ success: false, message: errors[0].message });
   }
 
   try {
     // Find the item and update it
-    const item = await Item.findByIdAndUpdate(
+    await Item.findByIdAndUpdate(
       req.params.id,
-      { name, category, quantity, price },
+      { name, category, quantity },
       { new: true }
     );
 
