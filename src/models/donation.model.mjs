@@ -11,24 +11,11 @@ const donationSchema = new Schema(
       type: Schema.Types.ObjectId,
       ref: "User",
     },
-    items: [
-      {
-        type: Schema.Types.ObjectId,
-        ref: "Item",
-      },
-    ],
+    item: { type: Object },
+    payment: { type: Object },
     donationType: {
       type: String,
       required: true,
-    },
-    payment: {
-      orderId: { type: String },
-      amount: { type: String },
-      currency: { type: String },
-      billingData: { type: Object },
-      paymentKey: { type: String },
-      iframeId: { type: String },
-      default: {},
     },
     donationStatus: {
       type: String,
@@ -39,6 +26,10 @@ const donationSchema = new Schema(
     donationStatusDescription: {
       type: String,
       default: "You donation is pending",
+    },
+    isApproved: {
+      type: Boolean,
+      default: false,
     },
   },
   { timestamps: true }

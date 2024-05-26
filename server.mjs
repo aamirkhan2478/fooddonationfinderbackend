@@ -5,7 +5,6 @@ import cors from "cors";
 import connection from "./src/database/connection.mjs";
 import userRouter from "./src/routes/user.routes.mjs";
 import donationRouter from "./src/routes/donation.routes.mjs";
-import itemRouter from "./src/routes/item.routes.mjs";
 import chatRouter from "./src/routes/chat.routes.mjs";
 import messageRouter from "./src/routes/message.routes.mjs";
 import contactRouter from "./src/routes/contact.routes.mjs";
@@ -42,7 +41,6 @@ app.get("/", (_req, res) => {
 // Routes
 app.use("/api/user", userRouter);
 app.use("/api/donation", auth, donationRouter);
-app.use("/api/item", auth, itemRouter);
 app.use("/api/chat", auth, chatRouter);
 app.use("/api/message", auth, messageRouter);
 app.use("/api/contact", contactRouter);

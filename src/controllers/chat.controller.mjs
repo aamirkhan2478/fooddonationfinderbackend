@@ -1,6 +1,9 @@
 import User from "../models/user.model.mjs";
 import Chat from "../models/chat.model.mjs";
 
+// @route   POST /api/chat
+// @desc    Access a chat
+// @access  Private
 export const accessChat =  async (req, res) => {
     const { userId } = req.body;
   
@@ -46,6 +49,9 @@ export const accessChat =  async (req, res) => {
       }
 };
 
+// @route   GET /api/chat
+// @desc    Fetch all chats
+// @access  Private
 export const fetchChats = async (req, res) => {
     try {
       Chat.find({ users: { $elemMatch: { $eq: req.user._id } } })
