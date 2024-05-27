@@ -27,6 +27,14 @@ export const createContact = async (req, res) => {
     return res.status(400).json({ success: false, message: errors[0].message });
   }
 
+  // Check if email is valid
+  const emailRegex = /^[A-Z0-9._%+-]+@[A-Z0-9-]+.+.[A-Z]{2,4}$/i;
+  if (!emailRegex.test(email)) {
+    return res
+      .status(400)
+      .json({ message: "Email is not valid", success: false });
+  }
+
   try {
     // Create a new contact
     const contact = new Contact({
@@ -42,7 +50,7 @@ export const createContact = async (req, res) => {
     // Send the contact as a response
     return res
       .status(201)
-      .json({ success: true, message: "Contact added successfully" });
+      .json({ success: true, message: "Thank you for contacting us." });
   } catch (error) {
     console.log(error);
     return res.status(500).json({ success: false, message: error.message });

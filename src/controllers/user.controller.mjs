@@ -195,6 +195,13 @@ export const forgotPassword = async (req, res) => {
       .json({ message: "Email is required", success: false });
   }
 
+  const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+  if (!emailRegex.test(email)) {
+    return res
+      .status(400)
+      .json({ message: "Email is not valid", success: false });
+  }
+
   try {
     // Find user with email
     const user = await User.findOne({ email });
@@ -231,6 +238,15 @@ export const resetPassword = async (req, res) => {
     return res
       .status(400)
       .json({ message: "All fields are required", success: false });
+  }
+
+  // Check if password is strong
+  const passwordRegex =
+    /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[$@$!%*?&#_])[A-Za-z\d$@$!%*?&#_]{8,}$/;
+  if (!passwordRegex.test(password)) {
+    return res
+      .status(400)
+      .json({ message: "Password must be 8 characters long, 1 special character, any number and one capital character", success: false });
   }
 
   try {
