@@ -423,3 +423,56 @@ export const changePassword = async (req, res) => {
     return res.status(500).json({ message: error.message, success: false });
   }
 };
+
+// @route   POST api/user/resend-email
+// @desc    Resend verification email
+// @access  Public
+
+export const resendEmail = async (req, res) => {
+  // Get email from request body
+  const { email } = req.body;
+
+  // Check if email is provided
+  if (!email) {
+    return res
+      .status(400)
+      .json({ message: "Email is required", success: false });
+  }
+
+  const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+  if (!emailRegex.test(email)) {
+    return res
+      .status(400)
+      .json({ message: "Email is not valid", success: false });
+  }
+
+  try {
+    // Find user with email
+    const user = await User.findOne({ email });
+
+    // Check if user exists
+    if (!user) {
+      return res
+        .status(400)
+        .json({ message: "User not found", success: false });
+    }
+
+    // Check if email is verified
+    if (user.isVerified) {
+      return res
+        .status(400)
+        .json({ message: "Email already verified", success: false });
+    }
+
+    // send verification email
+    await sendEmail({ email, emailType: "verify", userId: user._id });
+
+    // return success response
+    return res
+      .status(200)
+      .json({ message: "Verification link sent to email", success: true });
+  } catch (error) {
+    // return error response
+    return res.status(500).json({ message: error.message, success: false });
+  }
+}
