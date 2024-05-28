@@ -31,6 +31,6 @@ router.patch("/:id/claim", claimDonation);
 router.get("/show-status", status);
 router.get("/delivered", deliveredDonations);
 router.get("/claimed", claimedDonations);
-router.patch("/approved", approveDonation);
+router.patch("/:id/approved", approveDonation);
 
 export default router;
