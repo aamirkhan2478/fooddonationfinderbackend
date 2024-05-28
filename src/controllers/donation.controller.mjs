@@ -381,7 +381,9 @@ export const claimDonation = async (req, res) => {
 // @access Private
 export const countDonations = async (req, res) => {
   try {
-    const count = await Donation.countDocuments();
+    const count = await Donation.countDocuments({
+      $and: [{donor: req.user._id}]
+    });
     return res.status(200).json({ success: true, count });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
