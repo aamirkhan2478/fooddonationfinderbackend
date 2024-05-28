@@ -23,6 +23,14 @@ export const createVolunteer = async (req, res) => {
     return res.status(400).json({ success: false, message: errors[0].message });
   }
 
+  // Check if email is valid
+  const emailRegex = /^[A-Z0-9._%+-]+@[A-Z0-9-]+.+.[A-Z]{2,4}$/i;
+  if (!emailRegex.test(email)) {
+    return res
+      .status(400)
+      .json({ message: "Email is not valid", success: false });
+  }
+
   try {
     // Create a new volunteer
     const volunteer = new Volunteer({
