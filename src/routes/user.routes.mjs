@@ -9,7 +9,8 @@ import {
   updateUser,
   changePassword,
   updateImage,
-  resendEmail
+  resendEmail,
+  getAllUsers,
 } from "../controllers/user.controller.mjs";
 import auth from "../middleware/auth.middleware.mjs";
 
@@ -25,5 +26,6 @@ router.put("/update-user", auth, updateUser);
 router.put("/change-password", auth, changePassword);
 router.patch("/update-image", auth, updateImage);
 router.post("/resend-email", resendEmail);
+router.get("/all", auth, getAllUsers);
 
 export default router;

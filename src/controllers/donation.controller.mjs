@@ -77,6 +77,7 @@ export const getDonations = async (req, res) => {
         donationStatus: {
           $nin: ["Claimed", "Ready for Delivery", "Delivered"],
         },
+        isApproved: true,
       })
         .populate("donor", "name")
         .populate("recipient", "name");
@@ -134,9 +135,7 @@ export const status = async (req, res) => {
   try {
     const status = await Donation.find({
       recipient: req.user._id,
-    })
-      .select("amount items donationStatusDescription donationStatus")
-      .populate("items", "name");
+    }).select("amount donationStatusDescription donationStatus");
 
     return res.status(200).json({ status, success: true });
   } catch (error) {
@@ -173,7 +172,7 @@ export const claimedDonations = async (req, res) => {
     const claimed = await Donation.find({
       donationStatus: "Claimed",
       isApproved: true,
-      recipient: req.user._id,
+      recipient: id,
     })
       .populate("donor", "name")
       .populate("recipient", "name");
@@ -307,16 +306,6 @@ export const deleteDonation = async (req, res) => {
   try {
     await Donation.findByIdAndDelete(req.params.id);
 
-    // Revert the quantity of the items
-    const donation = await Donation.findById(req.params.id);
-    if (donation.donationType === "Food Items") {
-      for (let i = 0; i < donation.items.length; i++) {
-        const item = await Item.findById(donation.items[i]);
-        item.quantity = item.quantity + donation.quantity[i];
-        await item.save();
-      }
-    }
-
     return res
       .status(200)
       .json({ success: true, message: "Donation deleted successfully" });
@@ -330,15 +319,12 @@ export const deleteDonation = async (req, res) => {
 // @access Private
 export const claimDonation = async (req, res) => {
   try {
-    const donation = await Donation.findById(req.params.id).populate("items");
-
-    // Map the items and add comma between them
-    const items = donation.items.map((item) => item.name).join(", ");
+    const donation = await Donation.findById(req.params.id);
 
     donation.recipient = req.user._id;
     donation.donationStatus = "Claimed";
     donation.donationStatusDescription = `You claimed this donation with ${
-      items || donation.amount
+      donation.item.name || donation.payment.amount
     }`;
     await donation.save();
 
@@ -356,13 +342,12 @@ export const claimDonation = async (req, res) => {
       });
       await newChat.save();
 
-      // Map the items and add comma between them
-      const items = donation.items.map((item) => item.name).join(", ");
-
       // Send message to the donor
       const newMessage = new Message({
         sender: req.user._id,
-        content: `I have claimed ${items || donation.amount}`,
+        content: `I have claimed ${
+          donation.item.name || donation.payment.amount
+        }`,
         chat: newChat._id,
       });
       await newMessage.save();
@@ -381,10 +366,17 @@ export const claimDonation = async (req, res) => {
 // @access Private
 export const countDonations = async (req, res) => {
   try {
-    const count = await Donation.countDocuments({
-      $and: [{donor: req.user._id}]
-    });
-    return res.status(200).json({ success: true, count });
+    const user = await User.findById(req.user._id);
+
+    if (user.userType === "Admin") {
+      const count = await Donation.countDocuments();
+      return res.status(200).json({ success: true, count });
+    } else {
+      const count = await Donation.countDocuments({
+        $and: [{ donor: req.user._id }],
+      });
+      return res.status(200).json({ success: true, count });
+    }
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
   }
@@ -421,7 +413,7 @@ export const countClaimedDonations = async (_req, res) => {
   }
 };
 
-// @route   PATCH /api/donation/:id/approve
+// @route   PATCH /api/donation/:id/approved
 // @desc    Approve a donation
 // @access  Private
 export const approveDonation = async (req, res) => {

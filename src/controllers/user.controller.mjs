@@ -6,10 +6,10 @@ import { sendEmail } from "../utils/mailer.utils.mjs";
 // @access  Public
 export const register = async (req, res) => {
   // Get user details from request body
-  const { name, email, password, userType } = req.body;
+  const { name, email, password, userType, phoneNumber } = req.body;
 
   // Check if all fields are provided
-  if (!name || !email || !password || !userType) {
+  if (!name || !email || !password || !userType || !phoneNumber) {
     return res
       .status(400)
       .json({ message: "All fields are required", success: false });
@@ -19,9 +19,11 @@ export const register = async (req, res) => {
   const passwordRegex =
     /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[$@$!%*?&#_])[A-Za-z\d$@$!%*?&#_]{8,}$/;
   if (!passwordRegex.test(password)) {
-    return res
-      .status(400)
-      .json({ message: "Password must be 8 characters long, 1 special character, any number and one capital character", success: false });
+    return res.status(400).json({
+      message:
+        "Password must be 8 characters long, 1 special character, any number and one capital character",
+      success: false,
+    });
   }
 
   // Check if email is valid
@@ -49,7 +51,7 @@ export const register = async (req, res) => {
         .json({ message: "User already exists", success: false });
     }
 
-    const user = new User({ name, email, password, userType });
+    const user = new User({ name, email, password, userType, phoneNumber });
     const savedUser = await user.save();
 
     // send verification email
@@ -244,9 +246,11 @@ export const resetPassword = async (req, res) => {
   const passwordRegex =
     /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[$@$!%*?&#_])[A-Za-z\d$@$!%*?&#_]{8,}$/;
   if (!passwordRegex.test(password)) {
-    return res
-      .status(400)
-      .json({ message: "Password must be 8 characters long, 1 special character, any number and one capital character", success: false });
+    return res.status(400).json({
+      message:
+        "Password must be 8 characters long, 1 special character, any number and one capital character",
+      success: false,
+    });
   }
 
   try {
@@ -317,8 +321,7 @@ export const updateImage = async (req, res) => {
         .json({ message: "User not found", success: false });
     }
 
-    
-    if (!pic ) {
+    if (!pic) {
       return res
         .status(400)
         .json({ message: "Please select an image!", success: false });
@@ -427,7 +430,6 @@ export const changePassword = async (req, res) => {
 // @route   POST api/user/resend-email
 // @desc    Resend verification email
 // @access  Public
-
 export const resendEmail = async (req, res) => {
   // Get email from request body
   const { email } = req.body;
@@ -475,4 +477,23 @@ export const resendEmail = async (req, res) => {
     // return error response
     return res.status(500).json({ message: error.message, success: false });
   }
-}
+};
+
+// @route   GET api/user/all
+// @desc    Get all users
+// @access  Private
+export const getAllUsers = async (req, res) => {
+  try {
+    // Find all users and exclude password
+    const users = await User.find({
+      userType: { $ne: "Admin" },
+      isVerified: true,
+    }).select("-password");
+
+    // return all users
+    return res.status(200).json({ users, success: true });
+  } catch (error) {
+    // return error response
+    return res.status(500).json({ message: error.message, success: false });
+  }
+};

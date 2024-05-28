@@ -30,6 +30,10 @@ const userSchema = new Schema({
     type: Boolean,
     default: false,
   },
+  phoneNumber: {
+    type: String,
+    required: true,
+  },
   forgotPasswordToken: String,
   forgotPasswordTokenExpiry: Date,
   verifyToken: String,
