@@ -134,7 +134,10 @@ export const getDonations = async (req, res) => {
 export const status = async (req, res) => {
   try {
     const status = await Donation.find({
-      recipient: req.user._id,
+      $or: [
+        { recipient: req.user._id },
+        { donor: req.user._id }
+      ]
     }).select("amount donationStatusDescription donationStatus");
 
     return res.status(200).json({ status, success: true });
